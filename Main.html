@@ -188,7 +188,7 @@
             const container = document.getElementById('pomodoro-container');
             const animation = animations[Math.floor(Math.random() * animations.length)];
             container.classList.add(animation);
-            
+
             setTimeout(() => {
                 container.classList.remove(animation);
                 changeBackgroundColor();
@@ -199,18 +199,18 @@
             const now = getCSTTime();
             const currentTimeString = formatTime(now);
             document.getElementById('currentTime').innerHTML = `<span class="label">Current:</span> ${currentTimeString}`;
-            
+
             let currentBlock = { name: "Outside Schedule", start: "12:00 AM", end: "12:00 AM" };
             let nextBlock = { name: "Outside Schedule", start: "12:00 AM", end: "12:00 AM" };
             let isWithinSchedule = false;
 
             for (let i = 0; i < schedule.length; i++) {
                 const block = schedule[i];
-                const [startHour, startMinute] = block.start.split(':');
-                const [endHour, endMinute] = block.end.split(':');
+                const [startHour, startMinute] = block.start.split(':').map(Number);
+                const [endHour, endMinute] = block.end.split(':').map(Number);
                 const blockStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute);
                 const blockEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute);
-                
+
                 if (now >= blockStart && now < blockEnd) {
                     currentBlock = {
                         ...block,
@@ -218,8 +218,10 @@
                         end: formatTime(blockEnd)
                     };
                     const nextBlockRaw = schedule[(i + 1) % schedule.length];
-                    const nextBlockStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextBlockRaw.start.split(':')[0], nextBlockRaw.start.split(':')[1]);
-                    const nextBlockEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextBlockRaw.end.split(':')[0], nextBlockRaw.end.split(':')[1]);
+                    const [nextStartHour, nextStartMinute] = nextBlockRaw.start.split(':').map(Number);
+                    const [nextEndHour, nextEndMinute] = nextBlockRaw.end.split(':').map(Number);
+                    const nextBlockStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextStartHour, nextStartMinute);
+                    const nextBlockEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextEndHour, nextEndMinute);
                     nextBlock = {
                         ...nextBlockRaw,
                         start: formatTime(nextBlockStart),
@@ -238,18 +240,18 @@
             let timeLeft;
             if (isWithinSchedule) {
                 const [endHour, endMinute] = currentBlock.end.split(':');
-                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute);
+                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(endHour), parseInt(endMinute));
                 timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
             } else {
                 // Find the next scheduled block
                 const nextScheduledBlock = schedule.find(block => {
-                    const [startHour, startMinute] = block.start.split(':');
+                    const [startHour, startMinute] = block.start.split(':').map(Number);
                     const blockStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute);
                     return blockStart > now;
                 });
 
                 if (nextScheduledBlock) {
-                    const [startHour, startMinute] = nextScheduledBlock.start.split(':');
+                    const [startHour, startMinute] = nextScheduledBlock.start.split(':').map(Number);
                     const nextStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute);
                     timeLeft = Math.max(0, Math.floor((nextStartTime - now) / 1000));
                 } else {
@@ -261,21 +263,21 @@
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             document.getElementById('timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
+
             // Update activity timeline
             const currentActivityEl = document.getElementById('currentActivity');
             const nextActivityEl = document.getElementById('nextActivity');
-            
+
             currentActivityEl.querySelector('.activity-name').textContent = `Current: ${currentBlock.name}`;
             currentActivityEl.querySelector('.activity-time').textContent = `${currentBlock.start} - ${currentBlock.end}`;
-            
+
             nextActivityEl.querySelector('.activity-name').textContent = `Next: ${nextBlock.name}`;
             nextActivityEl.querySelector('.activity-time').textContent = `${nextBlock.start} - ${nextBlock.end}`;
 
             // Schedule the next update to occur at the next schedule change or every second when outside the schedule
             let nextUpdateTime;
             if (isWithinSchedule) {
-                const [endHour, endMinute] = currentBlock.end.split(':');
+                const [endHour, endMinute] = currentBlock.end.split(':').map(Number);
                 nextUpdateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute);
             } else {
                 nextUpdateTime = new Date(now.getTime() + 1000); // Update every second when outside schedule
